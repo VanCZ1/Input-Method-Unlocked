@@ -1,0 +1,102 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 2,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "$env{PROJECT_COMPILER} $env{PROJECT_TEXT}",
+        "CMAKE_CXX_FLAGS_RELEASE": "$env{PROJECT_COMPILER_RELEASE}",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "vcpkg",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_OVERLAY_PORTS": "${sourceDir}/cmake/ports/"
+      }
+    },
+    {
+      "name": "windows",
+      "hidden": true,
+      "environment": {
+        "PROJECT_TEXT": "-DUNICODE -D_UNICODE"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "ninja",
+      "hidden": true,
+      "generator": "Ninja",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "msvc",
+      "hidden": true,
+      "environment": {
+        "PROJECT_COMPILER": "/permissive- /Zc:preprocessor /EHsc /MP /W4 /wd4200 /sdl /Zi /utf-8 /external:W0 $penv{CXXFLAGS}",
+        "PROJECT_COMPILER_RELEASE": "/O2 /DNDEBUG /Zc:inline /JMC-"
+      },
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "cl.exe",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+      }
+    },
+    {
+      "name": "debug-msvc",
+      "inherits": [
+        "base",
+        "vcpkg",
+        "windows",
+        "ninja",
+        "msvc"
+      ],
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_SHARED_LINKER_FLAGS": "/INCREMENTAL /OPT:NOREF /OPT:NOICF"
+      }
+    },
+    {
+      "name": "release-msvc",
+      "inherits": [
+        "base",
+        "vcpkg",
+        "windows",
+        "ninja",
+        "msvc"
+      ],
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_SHARED_LINKER_FLAGS": "/INCREMENTAL:NO /OPT:REF /OPT:ICF /DEBUG:FULL"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug-msvc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release-msvc",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+  ]
+}
