@@ -48,73 +48,75 @@ namespace Input
 			case RE::INPUT_EVENT_TYPE::kButton:
 				{
 					const auto buttonEvent = currentEvent->AsButtonEvent();
-					if (buttonEvent && buttonEvent->GetDevice() == RE::INPUT_DEVICE::kKeyboard) {
-						const auto keyCode = buttonEvent->GetIDCode();
-						const auto keyIndex = static_cast<std::size_t>(keyCode);
+					if (!buttonEvent || buttonEvent->GetDevice() != RE::INPUT_DEVICE::kKeyboard) {
+						break;
+					}
 
-						if (isComposing) {
+					const auto keyCode = buttonEvent->GetIDCode();
+					const auto keyIndex = static_cast<std::size_t>(keyCode);
+
+					if (isComposing) {
+						shouldBlockCurrentEvent = true;
+
+						if (IsPassableModifierKey(keyCode)) {
+							shouldBlockCurrentEvent = !modifierKeyPassed.test(keyIndex);
+							if (!buttonEvent->IsPressed()) {
+								modifierKeyPassed.reset(keyIndex);
+							}
+						}
+
+						if (buttonEvent->IsDown()) {
+							shouldCaptureLastKeyInComposing = true;
+							lastKeyInComposing = keyCode;
+						} else if (!buttonEvent->IsPressed() && keyCode == lastKeyInComposing) {
+							lastKeyInComposing.reset();
+						}
+					} else {
+						if (shouldCaptureEndKeyInComposing && buttonEvent->IsDown()) {
+							shouldCaptureEndKeyInComposing = false;
+							endKeyInComposing = keyCode;
+						}
+
+						if (keyCode == endKeyInComposing) {
+							shouldBlockCurrentEvent = true;
+							endKeyInComposing.reset();
+						} else if (keyCode == consoleKeyCode) {
+							shouldBlockCurrentEvent = false;
+						} else if (Utils::Input::IsTextInputModifierKey(keyCode)) {
 							shouldBlockCurrentEvent = true;
 
 							if (IsPassableModifierKey(keyCode)) {
-								shouldBlockCurrentEvent = !modifierKeyPassed.test(keyIndex);
-								if (!buttonEvent->IsPressed()) {
-									modifierKeyPassed.reset(keyIndex);
+								shouldBlockCurrentEvent = false;
+
+								if (keyCode == DIK_LCONTROL) {
+									isLeftCtrlPressed = buttonEvent->IsPressed();
+								} else if (keyCode == DIK_RCONTROL) {
+									isRightCtrlPressed = buttonEvent->IsPressed();
 								}
+
+								modifierKeyPassed.set(keyIndex, buttonEvent->IsPressed());
 							}
+						} else if (Utils::Input::IsTextInputCharacterKey(keyCode)) {
+							shouldBlockCurrentEvent = true;
 
 							if (buttonEvent->IsDown()) {
-								shouldCaptureLastKeyInComposing = true;
-								lastKeyInComposing = keyCode;
-							} else if (!buttonEvent->IsPressed() && keyCode == lastKeyInComposing) {
-								lastKeyInComposing.reset();
+								characterKeyWithCtrl.set(keyIndex, isLeftCtrlPressed || isRightCtrlPressed);
 							}
-						} else {
-							if (shouldCaptureEndKeyInComposing && buttonEvent->IsDown()) {
-								shouldCaptureEndKeyInComposing = false;
-								endKeyInComposing = keyCode;
-							}
-
-							if (keyCode == endKeyInComposing) {
-								shouldBlockCurrentEvent = true;
-								endKeyInComposing.reset();
-							} else if (keyCode == consoleKeyCode) {
+							if (characterKeyWithCtrl.test(keyIndex)) {
 								shouldBlockCurrentEvent = false;
-							} else if (Utils::Input::IsTextInputModifierKey(keyCode)) {
-								shouldBlockCurrentEvent = true;
-
-								if (IsPassableModifierKey(keyCode)) {
-									shouldBlockCurrentEvent = false;
-
-									if (keyCode == DIK_LCONTROL) {
-										isLeftCtrlPressed = buttonEvent->IsPressed();
-									} else if (keyCode == DIK_RCONTROL) {
-										isRightCtrlPressed = buttonEvent->IsPressed();
-									}
-
-									modifierKeyPassed.set(keyIndex, buttonEvent->IsPressed());
-								}
-							} else if (Utils::Input::IsTextInputCharacterKey(keyCode)) {
-								shouldBlockCurrentEvent = true;
-
-								if (buttonEvent->IsDown()) {
-									characterKeyWithCtrl.set(keyIndex, isLeftCtrlPressed || isRightCtrlPressed);
-								}
-								if (characterKeyWithCtrl.test(keyIndex)) {
-									shouldBlockCurrentEvent = false;
-								}
-								if (!buttonEvent->IsPressed()) {
-									characterKeyWithCtrl.reset(keyIndex);
-								}
+							}
+							if (!buttonEvent->IsPressed()) {
+								characterKeyWithCtrl.reset(keyIndex);
 							}
 						}
 					}
+					break;
 				}
-				break;
 			case RE::INPUT_EVENT_TYPE::kChar:
 				{
 					shouldBlockCurrentEvent = true;
+					break;
 				}
-				break;
 			default:
 				break;
 			}

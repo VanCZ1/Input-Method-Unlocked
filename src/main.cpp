@@ -20,8 +20,8 @@ namespace
 		case SKSE::MessagingInterface::kInputLoaded:
 			{
 				Hooks::InstallLate();
+				break;
 			}
-			break;
 		case SKSE::MessagingInterface::kPreLoadGame:
 			break;
 		case SKSE::MessagingInterface::kPostLoadGame:

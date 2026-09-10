@@ -12,11 +12,12 @@ namespace Input
 
 	private:
 		std::mutex keyStateMutex;
+		static inline constexpr std::size_t directInputKeyCount{ 256 };
 
 		std::optional<std::uint32_t> lastKeyInComposing;
 		std::optional<std::uint32_t> endKeyInComposing;
-		std::bitset<256> modifierKeyPassed;
-		std::bitset<256> characterKeyWithCtrl;
+		std::bitset<directInputKeyCount> modifierKeyPassed;
+		std::bitset<directInputKeyCount> characterKeyWithCtrl;
 		bool shouldCaptureLastKeyInComposing{ false };
 		bool shouldCaptureEndKeyInComposing{ false };
 	};
