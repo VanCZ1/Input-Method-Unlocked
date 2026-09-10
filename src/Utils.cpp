@@ -62,6 +62,19 @@ namespace Utils::Input
 		return keyCode;
 	}
 
+	bool IsDirectInputKeyPressed(std::uint8_t a_keyCode)
+	{
+		bool result = false;
+		if (const auto inputDeviceManager = RE::BSInputDeviceManager::GetSingleton()) {
+			if (const auto keyboard = inputDeviceManager->GetKeyboard()) {
+				const auto& curState = keyboard->GetRuntimeData().curState;
+				result = (curState[a_keyCode] & kDirectInputPressedMask) != 0;
+			}
+		}
+
+		return result;
+	}
+
 	bool WasDirectInputKeyPressed(std::uint8_t a_keyCode)
 	{
 		bool result = false;

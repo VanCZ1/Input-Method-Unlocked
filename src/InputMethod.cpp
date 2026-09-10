@@ -101,12 +101,11 @@ namespace InputMethod
 		}
 
 		task->AddUITask([this]() {
-			isImePositionUpdatePending.store(false, std::memory_order_relaxed);
-			if (!IsEnabled()) {
-				return;
+			if (IsEnabled()) {
+				SetImeWindowPosition(true);
 			}
 
-			SetImeWindowPosition(true);
+			isImePositionUpdatePending.store(false, std::memory_order_relaxed);
 		});
 	}
 

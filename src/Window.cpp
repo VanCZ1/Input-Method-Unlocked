@@ -42,6 +42,11 @@ namespace Window
 				inputMethodManager->ProcessCharResult(static_cast<std::uint16_t>(a_wParam), LOWORD(a_lParam));
 				return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
+		case WM_KILLFOCUS:
+			{
+				Input::Manager::GetSingleton()->ResetKeyState();
+				return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+			}
 		case WM_INPUTLANGCHANGE:
 			{
 				inputMethodManager->ClearPendingCharResult();
