@@ -57,7 +57,7 @@ namespace Hooks
 		static HRESULT STDMETHODCALLTYPE Thunk(IDirectInputDevice8A* a_this, HWND a_hWnd, DWORD a_flags)
 		{
 			if (a_this && a_this == keyboardDevice) {
-				a_flags &= static_cast<DWORD>(~(DISCL_EXCLUSIVE | DISCL_NONEXCLUSIVE));
+				a_flags &= ~(DISCL_EXCLUSIVE | DISCL_NONEXCLUSIVE);
 				a_flags |= DISCL_NONEXCLUSIVE;
 			}
 

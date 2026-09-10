@@ -17,21 +17,15 @@ namespace Scaleform::TextInput
 			const auto y = Utils::ActionScript::GetFloatMember(boundaries, "y");
 			const auto width = Utils::ActionScript::GetFloatMember(boundaries, "width");
 			const auto height = Utils::ActionScript::GetFloatMember(boundaries, "height");
-			if (!x || !y || !width || !height || *width < 0.0f || *height < 0.0f) {
-				return std::nullopt;
-			}
-
-			const auto right = *x + *width;
-			const auto bottom = *y + *height;
-			if (!std::isfinite(right) || !std::isfinite(bottom)) {
+			if (!x || !y || !width || !height) {
 				return std::nullopt;
 			}
 
 			return RE::GRectF{
 				.left = *x,
 				.top = *y,
-				.right = right,
-				.bottom = bottom
+				.right = *x + *width,
+				.bottom = *y + *height
 			};
 		}
 
@@ -45,7 +39,7 @@ namespace Scaleform::TextInput
 
 			const auto x = Utils::ActionScript::GetFloatMember(lineMetrics, "x");
 			const auto height = Utils::ActionScript::GetFloatMember(lineMetrics, "height");
-			if (!x || !height || *height < 0.0f) {
+			if (!x || !height) {
 				return std::nullopt;
 			}
 
@@ -55,7 +49,7 @@ namespace Scaleform::TextInput
 					if (Utils::String::CompareNoCase(*alignment, "bottom")) {
 						y = *fieldHeight;
 					} else if (Utils::String::CompareNoCase(*alignment, "center")) {
-						y = (*fieldHeight + *height) * 0.5f;
+						y = std::midpoint(*fieldHeight, *height);
 					}
 				}
 			}
