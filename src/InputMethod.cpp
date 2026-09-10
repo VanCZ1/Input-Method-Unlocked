@@ -347,7 +347,7 @@ namespace InputMethod
 
 		const auto scaleformDataCreator = factoryManager->GetCreator<RE::BSUIScaleformData>(interfaceStrings->bsUIScaleformData);
 		if (!scaleformDataCreator) {
-			logger::error("Failed to create BSTDerivedCreator.");
+			logger::error("Failed to get BSUIScaleformData Creator.");
 			return;
 		}
 

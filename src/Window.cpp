@@ -36,7 +36,7 @@ namespace Window
 				if (shouldBlockNextResult) {
 					shouldBlockNextResult = false;
 					inputMethodManager->ClearPendingCharResult();
-					return 0;
+					return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 				}
 
 				inputMethodManager->ProcessCharResult(static_cast<std::uint16_t>(a_wParam), LOWORD(a_lParam));
