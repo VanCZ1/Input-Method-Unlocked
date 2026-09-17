@@ -9,11 +9,11 @@ namespace Utils
 		[[nodiscard]] bool LessNoCase(std::string_view a_left, std::string_view a_right);
 	}
 
-	namespace Input
+	namespace DirectInput
 	{
-		[[nodiscard]] std::uint32_t GetDirectInputKeyCodeFromKeyData(std::uint32_t a_keyData);
-		[[nodiscard]] bool IsDirectInputKeyPressed(std::uint8_t a_keyCode);
-		[[nodiscard]] bool WasDirectInputKeyPressed(std::uint8_t a_keyCode);
+		[[nodiscard]] std::uint32_t GetKeyCodeFromKeyData(std::uint32_t a_keyData);
+		[[nodiscard]] bool IsKeyPressed(std::uint8_t a_keyCode);
+		[[nodiscard]] bool WasKeyPressed(std::uint8_t a_keyCode);
 		[[nodiscard]] bool IsTextInputModifierKey(std::uint32_t a_keyCode);
 		[[nodiscard]] bool IsTextInputCharacterKey(std::uint32_t a_keyCode);
 	}

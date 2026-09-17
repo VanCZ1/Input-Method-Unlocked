@@ -35,8 +35,8 @@ namespace Input
 
 		const bool isComposing = inputMethodManager->IsComposing();
 		const auto consoleKeyCode = inputMethodManager->GetConsoleKeyCode();
-		bool isLeftCtrlPressed = Utils::Input::WasDirectInputKeyPressed(DIK_LCONTROL);
-		bool isRightCtrlPressed = Utils::Input::WasDirectInputKeyPressed(DIK_RCONTROL);
+		bool isLeftCtrlPressed = Utils::DirectInput::WasKeyPressed(DIK_LCONTROL);
+		bool isRightCtrlPressed = Utils::DirectInput::WasKeyPressed(DIK_RCONTROL);
 
 		auto currentEventPtr = &a_eventHead;
 		while (*currentEventPtr) {
@@ -82,7 +82,7 @@ namespace Input
 							endKeyInComposing.reset();
 						} else if (keyCode == consoleKeyCode) {
 							shouldBlockCurrentEvent = false;
-						} else if (Utils::Input::IsTextInputModifierKey(keyCode)) {
+						} else if (Utils::DirectInput::IsTextInputModifierKey(keyCode)) {
 							shouldBlockCurrentEvent = true;
 
 							if (IsPassableModifierKey(keyCode)) {
@@ -96,7 +96,7 @@ namespace Input
 
 								modifierKeyPassed.set(keyIndex, buttonEvent->IsPressed());
 							}
-						} else if (Utils::Input::IsTextInputCharacterKey(keyCode)) {
+						} else if (Utils::DirectInput::IsTextInputCharacterKey(keyCode)) {
 							shouldBlockCurrentEvent = true;
 
 							if (buttonEvent->IsDown()) {

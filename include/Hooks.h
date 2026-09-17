@@ -2,6 +2,7 @@
 
 namespace Hooks
 {
-	void InstallEarly();
-	void InstallLate();
+	void InstallAtLoad();
+	void InstallAtPostLoad();
+	void InstallAtInputLoaded();
 }

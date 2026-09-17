@@ -22,7 +22,7 @@ namespace Window
 		case WM_SYSKEYDOWN:
 			{
 				if (!inputMethodManager->IsComposing()) {
-					const auto keyCode = Utils::Input::GetDirectInputKeyCodeFromKeyData(static_cast<std::uint32_t>(a_lParam));
+					const auto keyCode = Utils::DirectInput::GetKeyCodeFromKeyData(static_cast<std::uint32_t>(a_lParam));
 					const auto consoleKeyCode = inputMethodManager->GetConsoleKeyCode();
 					if (keyCode == consoleKeyCode) {
 						shouldBlockNextResult = true;

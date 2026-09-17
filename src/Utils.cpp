@@ -38,7 +38,7 @@ namespace Utils::String
 	}
 }
 
-namespace Utils::Input
+namespace Utils::DirectInput
 {
 	namespace
 	{
@@ -51,7 +51,7 @@ namespace Utils::Input
 		constexpr std::uint8_t kDirectInputPressedMask = 0x80;
 	}
 
-	std::uint32_t GetDirectInputKeyCodeFromKeyData(std::uint32_t a_keyData)
+	std::uint32_t GetKeyCodeFromKeyData(std::uint32_t a_keyData)
 	{
 		auto keyCode = static_cast<std::uint32_t>((a_keyData >> kScanCodeShift) & kScanCodeMask);
 		const auto isExtended = ((a_keyData >> kExtendedFlagShift) & kExtendedFlagMask) != 0;
@@ -62,7 +62,7 @@ namespace Utils::Input
 		return keyCode;
 	}
 
-	bool IsDirectInputKeyPressed(std::uint8_t a_keyCode)
+	bool IsKeyPressed(std::uint8_t a_keyCode)
 	{
 		bool result = false;
 		if (const auto inputDeviceManager = RE::BSInputDeviceManager::GetSingleton()) {
@@ -75,7 +75,7 @@ namespace Utils::Input
 		return result;
 	}
 
-	bool WasDirectInputKeyPressed(std::uint8_t a_keyCode)
+	bool WasKeyPressed(std::uint8_t a_keyCode)
 	{
 		bool result = false;
 		if (const auto inputDeviceManager = RE::BSInputDeviceManager::GetSingleton()) {

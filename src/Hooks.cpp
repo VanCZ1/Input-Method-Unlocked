@@ -221,16 +221,24 @@ namespace Hooks
 		static inline WNDPROC originalFunction;
 	};
 
-	void InstallEarly()
+	void InstallAtLoad()
 	{
-		logger::info("Installing early hooks...");
+		logger::info("Installing hooks at Load...");
+		SKSE::AllocTrampoline(22);
 		DirectInput8CreateHook::Install();
-		logger::info("Early hooks installation is complete.");
+		logger::info("Hooks installation is complete at Load.");
 	}
 
-	void InstallLate()
+	void InstallAtPostLoad()
 	{
-		logger::info("Installing late hooks...");
+		logger::info("Installing hooks at PostLoad...");
+		ToUnicodeHook::Install();
+		logger::info("Hooks installation is complete at PostLoad.");
+	}
+
+	void InstallAtInputLoaded()
+	{
+		logger::info("Installing hooks at InputLoaded...");
 		const auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 		if (!renderer) {
 			logger::error("Failed to find renderer.");
@@ -244,11 +252,8 @@ namespace Hooks
 		}
 
 		InputMethod::Manager::GetSingleton()->Initialize(hWnd);
-
-		SKSE::AllocTrampoline(22);
-		ToUnicodeHook::Install();
 		ProcessInputQueueHook::Install();
 		WndProcHook::Install(hWnd);
-		logger::info("Late hooks installation is complete.");
+		logger::info("Hooks installation is complete at InputLoaded.");
 	}
 }

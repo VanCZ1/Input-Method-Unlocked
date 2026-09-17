@@ -1,5 +1,4 @@
 #pragma once
-#include "RE/GFxCharEvent.h"
 
 namespace InputMethod
 {

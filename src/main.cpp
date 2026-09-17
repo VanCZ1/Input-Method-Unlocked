@@ -5,7 +5,7 @@ namespace
 {
 	void Load()
 	{
-		Hooks::InstallEarly();
+		Hooks::InstallAtLoad();
 	}
 
 	void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
@@ -14,12 +14,15 @@ namespace
 		case SKSE::MessagingInterface::kDataLoaded:
 			break;
 		case SKSE::MessagingInterface::kPostLoad:
-			break;
+			{
+				Hooks::InstallAtPostLoad();
+				break;
+			}
 		case SKSE::MessagingInterface::kPostPostLoad:
 			break;
 		case SKSE::MessagingInterface::kInputLoaded:
 			{
-				Hooks::InstallLate();
+				Hooks::InstallAtInputLoaded();
 				break;
 			}
 		case SKSE::MessagingInterface::kPreLoadGame:

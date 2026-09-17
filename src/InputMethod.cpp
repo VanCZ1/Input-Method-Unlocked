@@ -360,7 +360,7 @@ namespace InputMethod
 		RE::GFxCharEvent& charEvent = charEventPool[charEventIndex];
 		charEventIndex = (charEventIndex + 1) % charEventPoolSize;
 		charEvent.type = RE::GFxEvent::EventType::kCharEvent;
-		charEvent.wcharCode = a_codePoint;
+		charEvent.wCharCode = a_codePoint;
 		charEvent.keyboardIndex = 0;
 		scaleformData->scaleformEvent = &charEvent;
 
