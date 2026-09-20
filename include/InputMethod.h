@@ -23,7 +23,8 @@ namespace InputMethod
 		bool IsCandidateWindowOpen() const;
 
 		void ClearPendingCharResult();
-		void ProcessCharResult(std::uint16_t a_codeUnit, std::uint16_t a_repeatCount);
+		void UpdateCharCodePage(HKL a_keyboardLayout);
+		void ProcessCharResult(std::uint8_t a_charByte, std::uint16_t a_repeatCount);
 		std::wstring GetImeResultString() const;
 		void ProcessImeResult();
 
@@ -39,10 +40,13 @@ namespace InputMethod
 
 		std::atomic<bool> isEnabled{ false };
 		std::atomic<bool> isImePositionUpdatePending{ false };
+		UINT charCodePage{ CP_ACP };
 
 		std::atomic<bool> isComposing{ false };
 		bool isCandidateWindowOpen{ false };
-		std::optional<std::uint16_t> pendingCharHighSurrogate;
+		std::size_t totalCharByteCount{ 0 };
+		std::size_t pendingCharByteCount{ 0 };
+		std::array<char, 4> pendingCharBytes{};
 
 		static inline constexpr std::size_t charEventPoolSize{ 256 };
 		std::array<RE::GFxCharEvent, charEventPoolSize> charEventPool{};

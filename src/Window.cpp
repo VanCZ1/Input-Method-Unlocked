@@ -14,7 +14,7 @@ namespace Window
 	{
 		auto inputMethodManager = InputMethod::Manager::GetSingleton();
 		if (!inputMethodManager->IsEnabled()) {
-			return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+			return CallWindowProcA(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 		}
 
 		switch (a_uMsg) {
@@ -29,40 +29,41 @@ namespace Window
 					}
 				}
 
-				return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+				return CallWindowProcA(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		case WM_CHAR:
 			{
 				if (shouldBlockNextResult) {
 					shouldBlockNextResult = false;
 					inputMethodManager->ClearPendingCharResult();
-					return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+					return CallWindowProcA(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 				}
 
-				inputMethodManager->ProcessCharResult(static_cast<std::uint16_t>(a_wParam), LOWORD(a_lParam));
-				return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+				inputMethodManager->ProcessCharResult(static_cast<std::uint8_t>(a_wParam), LOWORD(a_lParam));
+				return CallWindowProcA(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		case WM_KILLFOCUS:
 			{
 				Input::Manager::GetSingleton()->ResetKeyState();
-				return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+				return CallWindowProcA(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		case WM_INPUTLANGCHANGE:
 			{
+				const auto keyboardLayout = reinterpret_cast<HKL>(a_lParam);
 				inputMethodManager->ClearPendingCharResult();
-				inputMethodManager->SetCompositionWindowFont(reinterpret_cast<HKL>(a_lParam), static_cast<BYTE>(a_wParam));
-				return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+				inputMethodManager->UpdateCharCodePage(keyboardLayout);
+				inputMethodManager->SetCompositionWindowFont(keyboardLayout, static_cast<BYTE>(a_wParam));
+				return CallWindowProcA(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		case WM_IME_SETCONTEXT:
 			{
-				return DefWindowProcW(a_hWnd, a_uMsg, a_wParam, a_lParam);
+				return DefWindowProcA(a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		case WM_IME_STARTCOMPOSITION:
 			{
 				Input::Manager::GetSingleton()->OnCompositionStart();
-				inputMethodManager->ClearPendingCharResult();
 				inputMethodManager->RecordComposing(true);
-				return DefWindowProcW(a_hWnd, a_uMsg, a_wParam, a_lParam);
+				return DefWindowProcA(a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		case WM_IME_COMPOSITION:
 			{
@@ -77,14 +78,13 @@ namespace Window
 					a_lParam &= ~GCS_RESULTSTR;
 				}
 
-				return DefWindowProcW(a_hWnd, a_uMsg, a_wParam, a_lParam);
+				return DefWindowProcA(a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		case WM_IME_ENDCOMPOSITION:
 			{
 				Input::Manager::GetSingleton()->OnCompositionEnd();
-				inputMethodManager->ClearPendingCharResult();
 				inputMethodManager->RecordComposing(false);
-				return DefWindowProcW(a_hWnd, a_uMsg, a_wParam, a_lParam);
+				return DefWindowProcA(a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		case WM_IME_CHAR:
 			{
@@ -98,13 +98,13 @@ namespace Window
 					inputMethodManager->RecordCandidateWindowOpen(false);
 				}
 
-				return DefWindowProcW(a_hWnd, a_uMsg, a_wParam, a_lParam);
+				return DefWindowProcA(a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		default:
 			break;
 		}
 
-		return CallWindowProcW(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+		return CallWindowProcA(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 	}
 
 	void ResetMessageState()

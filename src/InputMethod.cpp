@@ -51,8 +51,10 @@ namespace InputMethod
 			logger::error("Failed to enable association.");
 			return false;
 		}
+		const auto keyboardLayout = GetKeyboardLayout(0);
+		UpdateCharCodePage(keyboardLayout);
+		SetCompositionWindowFont(keyboardLayout, std::nullopt);
 		SetImeWindowPosition(true);
-		SetCompositionWindowFont(GetKeyboardLayout(0), std::nullopt);
 
 		return true;
 	}
@@ -86,7 +88,7 @@ namespace InputMethod
 	{
 		isComposing.store(false, std::memory_order_relaxed);
 		isCandidateWindowOpen = false;
-		pendingCharHighSurrogate.reset();
+		ClearPendingCharResult();
 	}
 
 	void Manager::UpdateImeWindowPosition()
@@ -155,11 +157,11 @@ namespace InputMethod
 			if (a_characterSet) {
 				characterSet = *a_characterSet;
 			} else {
-				const auto languageId = LOWORD(reinterpret_cast<std::uintptr_t>(a_keyboardLayout));
-				const auto localeId = MAKELCID(languageId, SORT_DEFAULT);
+				const auto languageID = LOWORD(reinterpret_cast<std::uintptr_t>(a_keyboardLayout));
+				const auto localeID = MAKELCID(languageID, SORT_DEFAULT);
 
 				CHARSETINFO charsetInfo{};
-				if (TranslateCharsetInfo(reinterpret_cast<DWORD*>(static_cast<std::uintptr_t>(localeId)), &charsetInfo, TCI_SRCLOCALE)) {
+				if (TranslateCharsetInfo(reinterpret_cast<DWORD*>(static_cast<std::uintptr_t>(localeID)), &charsetInfo, TCI_SRCLOCALE)) {
 					characterSet = static_cast<BYTE>(charsetInfo.ciCharset);
 				}
 			}
@@ -186,31 +188,88 @@ namespace InputMethod
 
 	void Manager::ClearPendingCharResult()
 	{
-		pendingCharHighSurrogate.reset();
+		totalCharByteCount = 0;
+		pendingCharByteCount = 0;
+		pendingCharBytes.fill(0);
 	}
 
-	void Manager::ProcessCharResult(std::uint16_t a_codeUnit, std::uint16_t a_repeatCount)
+	void Manager::UpdateCharCodePage(HKL a_keyboardLayout)
 	{
-		if (IS_HIGH_SURROGATE(a_codeUnit)) {
-			pendingCharHighSurrogate = a_codeUnit;
-			return;
+		charCodePage = CP_ACP;
+
+		if (a_keyboardLayout) {
+			const auto languageID = LOWORD(reinterpret_cast<std::uintptr_t>(a_keyboardLayout));
+			const auto localeID = MAKELCID(languageID, SORT_DEFAULT);
+			wchar_t localeName[LOCALE_NAME_MAX_LENGTH] = { 0 };
+			if (LCIDToLocaleName(localeID, localeName, LOCALE_NAME_MAX_LENGTH, 0)) {
+				DWORD codePage = 0;
+				if (GetLocaleInfoEx(localeName, LOCALE_IDEFAULTANSICODEPAGE | LOCALE_RETURN_NUMBER,
+						reinterpret_cast<wchar_t*>(&codePage), static_cast<int>(sizeof(codePage) / sizeof(wchar_t)))) {
+					charCodePage = codePage;
+				}
+			}
 		}
 
-		std::uint32_t codePoint = static_cast<std::uint32_t>(a_codeUnit);
+		if (charCodePage == 0) {
+			charCodePage = GetACP();
+		}
+	}
 
-		const auto charHighSurrogate = std::exchange(pendingCharHighSurrogate, std::nullopt);
-		if (IS_LOW_SURROGATE(a_codeUnit)) {
-			if (!charHighSurrogate) {
+	void Manager::ProcessCharResult(std::uint8_t a_charByte, std::uint16_t a_repeatCount)
+	{
+		constexpr std::size_t maxAttempts = 2;
+		for (std::size_t attempt = 0; attempt < maxAttempts; ++attempt) {
+			const bool isFirstByte = pendingCharByteCount == 0;
+			if (isFirstByte) {
+				totalCharByteCount = Utils::Encoding::GetCharByteCount(charCodePage, a_charByte);
+				if (totalCharByteCount == 0) {
+					return;
+				}
+			} else {
+				if (charCodePage == CP_UTF8 && !Utils::Encoding::UTF8::IsValidContinuation(a_charByte, pendingCharByteCount, static_cast<std::uint8_t>(pendingCharBytes[0]))) {
+					ClearPendingCharResult();
+					continue;
+				}
+			}
+
+			if (pendingCharByteCount >= pendingCharBytes.size()) {
+				ClearPendingCharResult();
 				return;
+			} else {
+				pendingCharBytes[pendingCharByteCount] = static_cast<char>(a_charByte);
+				if (++pendingCharByteCount < totalCharByteCount) {
+					return;
+				}
 			}
-			codePoint = Utils::Unicode::DecodeSurrogatePair(*charHighSurrogate, a_codeUnit);
-		}
 
-		if (Utils::Unicode::IsTextCodePoint(codePoint)) {
-			const auto repeatCount = std::max<std::size_t>(a_repeatCount, 1);
-			for (std::size_t index = 0; index < repeatCount; ++index) {
-				SendCodePoint(codePoint);
+			std::array<wchar_t, 2> codeUnits{};
+			const auto codeUnitCount = MultiByteToWideChar(charCodePage,
+				MB_ERR_INVALID_CHARS,
+				pendingCharBytes.data(),
+				static_cast<int>(pendingCharByteCount),
+				codeUnits.data(),
+				static_cast<int>(codeUnits.size()));
+			ClearPendingCharResult();
+
+			std::uint32_t codePoint = 0;
+			if (codeUnitCount == 0) {
+				return;
+			} else if (codeUnitCount == 1) {
+				codePoint = static_cast<std::uint16_t>(codeUnits[0]);
+			} else if (codeUnitCount == 2) {
+				if (!IS_HIGH_SURROGATE(codeUnits[0]) || !IS_LOW_SURROGATE(codeUnits[1])) {
+					return;
+				}
+				codePoint = Utils::Charset::Unicode::DecodeSurrogatePair(static_cast<std::uint16_t>(codeUnits[0]), static_cast<std::uint16_t>(codeUnits[1]));
 			}
+
+			const auto repeatCount = std::max<std::uint16_t>(a_repeatCount, 1);
+			if (Utils::Charset::Unicode::IsTextCodePoint(codePoint)) {
+				for (std::size_t index = 0; index < repeatCount; ++index) {
+					SendCodePoint(codePoint);
+				}
+			}
+			return;
 		}
 	}
 
@@ -259,7 +318,7 @@ namespace InputMethod
 				if (nextIndex < imeResultStr.size()) {
 					const auto secondCodeUnit = static_cast<std::uint16_t>(imeResultStr[nextIndex]);
 					if (IS_LOW_SURROGATE(secondCodeUnit)) {
-						codePoint = Utils::Unicode::DecodeSurrogatePair(firstCodeUnit, secondCodeUnit);
+						codePoint = Utils::Charset::Unicode::DecodeSurrogatePair(firstCodeUnit, secondCodeUnit);
 						++index;
 					} else {
 						codePoint = replacementCharacter;

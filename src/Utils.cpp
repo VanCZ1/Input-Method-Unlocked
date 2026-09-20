@@ -142,41 +142,87 @@ namespace Utils::DirectInput
 	}
 }
 
-namespace Utils::Unicode
+namespace Utils::Charset
 {
-	namespace
+	namespace Unicode
 	{
-		constexpr std::uint32_t kHighSurrogateStart = 0xD800;
-		constexpr std::uint32_t kHighSurrogateEnd = 0xDBFF;
-		constexpr std::uint32_t kLowSurrogateStart = 0xDC00;
-		constexpr std::uint32_t kLowSurrogateEnd = 0xDFFF;
-		constexpr std::uint32_t kSupplementaryPlaneStart = 0x10000;
+		namespace
+		{
+			constexpr std::uint32_t kHighSurrogateStart = 0xD800;
+			constexpr std::uint32_t kHighSurrogateEnd = 0xDBFF;
+			constexpr std::uint32_t kLowSurrogateStart = 0xDC00;
+			constexpr std::uint32_t kLowSurrogateEnd = 0xDFFF;
+			constexpr std::uint32_t kSupplementaryPlaneStart = 0x10000;
 
-		constexpr std::uint32_t kMaxUnicodeCodePoint = 0x10FFFF;
-		constexpr std::uint32_t kC0ControlEnd = 0x1F;
-		constexpr std::uint32_t kDeleteCharacter = 0x7F;
-		constexpr std::uint32_t kC1ControlStart = 0x80;
-		constexpr std::uint32_t kC1ControlEnd = 0x9F;
-	}
-
-	std::uint32_t DecodeSurrogatePair(std::uint16_t a_highSurrogate, std::uint16_t a_lowSurrogate)
-	{
-		const auto highOffset = static_cast<std::uint32_t>(a_highSurrogate) - kHighSurrogateStart;
-		const auto lowOffset = static_cast<std::uint32_t>(a_lowSurrogate) - kLowSurrogateStart;
-
-		return kSupplementaryPlaneStart + (highOffset << 10) + lowOffset;
-	}
-
-	bool IsTextCodePoint(std::uint32_t a_code)
-	{
-		if (a_code > kMaxUnicodeCodePoint ||
-			a_code <= kC0ControlEnd || a_code == kDeleteCharacter ||
-			(a_code >= kC1ControlStart && a_code <= kC1ControlEnd) ||
-			(a_code >= kHighSurrogateStart && a_code <= kLowSurrogateEnd)) {
-			return false;
+			constexpr std::uint32_t kMaxUnicodeCodePoint = 0x10FFFF;
+			constexpr std::uint32_t kC0ControlEnd = 0x1F;
+			constexpr std::uint32_t kDeleteCharacter = 0x7F;
+			constexpr std::uint32_t kC1ControlStart = 0x80;
+			constexpr std::uint32_t kC1ControlEnd = 0x9F;
 		}
 
-		return true;
+		std::uint32_t DecodeSurrogatePair(std::uint16_t a_highSurrogate, std::uint16_t a_lowSurrogate)
+		{
+			const auto highOffset = static_cast<std::uint32_t>(a_highSurrogate) - kHighSurrogateStart;
+			const auto lowOffset = static_cast<std::uint32_t>(a_lowSurrogate) - kLowSurrogateStart;
+
+			return kSupplementaryPlaneStart + (highOffset << 10) + lowOffset;
+		}
+
+		bool IsTextCodePoint(std::uint32_t a_code)
+		{
+			if (a_code > kMaxUnicodeCodePoint ||
+				a_code <= kC0ControlEnd || a_code == kDeleteCharacter ||
+				(a_code >= kC1ControlStart && a_code <= kC1ControlEnd) ||
+				(a_code >= kHighSurrogateStart && a_code <= kLowSurrogateEnd)) {
+				return false;
+			}
+
+			return true;
+		}
+	}
+}
+
+namespace Utils::Encoding
+{
+	namespace UTF8
+	{
+		bool IsValidContinuation(std::uint8_t a_charByte, std::size_t a_byteIndex, std::uint8_t a_firstByte)
+		{
+			if (a_charByte < 0x80 || a_charByte > 0xBF) {
+				return false;
+			}
+
+			if (a_byteIndex == 1) {
+				if ((a_firstByte == 0xE0 && a_charByte < 0xA0) ||
+					(a_firstByte == 0xED && a_charByte > 0x9F) ||
+					(a_firstByte == 0xF0 && a_charByte < 0x90) ||
+					(a_firstByte == 0xF4 && a_charByte > 0x8F)) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+	}
+
+	std::size_t GetCharByteCount(UINT a_codePage, std::uint8_t a_firstByte)
+	{
+		if (a_codePage != CP_UTF8) {
+			return IsDBCSLeadByteEx(a_codePage, a_firstByte) ? 2 : 1;
+		} else {
+			if (a_firstByte <= 0x7F) {
+				return 1;
+			} else if (a_firstByte >= 0xC2 && a_firstByte <= 0xDF) {
+				return 2;
+			} else if (a_firstByte >= 0xE0 && a_firstByte <= 0xEF) {
+				return 3;
+			} else if (a_firstByte >= 0xF0 && a_firstByte <= 0xF4) {
+				return 4;
+			}
+		}
+
+		return 0;
 	}
 }
 

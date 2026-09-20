@@ -18,10 +18,23 @@ namespace Utils
 		[[nodiscard]] bool IsTextInputCharacterKey(std::uint32_t a_keyCode);
 	}
 
-	namespace Unicode
+	namespace Charset
 	{
-		[[nodiscard]] std::uint32_t DecodeSurrogatePair(std::uint16_t a_highSurrogate, std::uint16_t a_lowSurrogate);
-		[[nodiscard]] bool IsTextCodePoint(std::uint32_t a_code);
+		namespace Unicode
+		{
+			[[nodiscard]] std::uint32_t DecodeSurrogatePair(std::uint16_t a_highSurrogate, std::uint16_t a_lowSurrogate);
+			[[nodiscard]] bool IsTextCodePoint(std::uint32_t a_code);
+		}
+	}
+
+	namespace Encoding
+	{
+		namespace UTF8
+		{
+			[[nodiscard]] bool IsValidContinuation(std::uint8_t a_charByte, std::size_t a_byteIndex, std::uint8_t a_firstByte);
+		}
+
+		[[nodiscard]] std::size_t GetCharByteCount(UINT a_codePage, std::uint8_t a_firstByte);
 	}
 
 	namespace ActionScript

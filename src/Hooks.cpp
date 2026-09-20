@@ -188,7 +188,7 @@ namespace Hooks
 	public:
 		static void Install(HWND a_hWnd)
 		{
-			originalFunction = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(a_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(Thunk)));
+			originalFunction = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(a_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(Thunk)));
 			if (!originalFunction) {
 				logger::error("Failed to hook WndProc.");
 			}
@@ -212,7 +212,7 @@ namespace Hooks
 			}
 
 			if (!inputMethodManager->IsEnabled()) {
-				return CallWindowProcW(originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+				return CallWindowProcA(originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 
 			return Window::ProcessWindowMessage(originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
