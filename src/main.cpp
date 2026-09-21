@@ -25,10 +25,6 @@ namespace
 				Hooks::InstallAtInputLoaded();
 				break;
 			}
-		case SKSE::MessagingInterface::kPreLoadGame:
-			break;
-		case SKSE::MessagingInterface::kPostLoadGame:
-			break;
 		}
 	}
 }

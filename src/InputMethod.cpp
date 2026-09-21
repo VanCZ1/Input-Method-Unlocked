@@ -183,9 +183,9 @@ namespace InputMethod
 		}
 
 		ImmNotifyIME(imeContext, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
-		constexpr std::size_t candidateWindowCount = 4;
-		for (std::size_t index = 0; index < candidateWindowCount; ++index) {
-			ImmNotifyIME(imeContext, NI_CLOSECANDIDATE, static_cast<DWORD>(index), 0);
+		constexpr DWORD candidateWindowCount = 4;
+		for (DWORD index = 0; index < candidateWindowCount; ++index) {
+			ImmNotifyIME(imeContext, NI_CLOSECANDIDATE, index, 0);
 		}
 	}
 
@@ -403,10 +403,10 @@ namespace InputMethod
 
 	void Manager::SetCandidateWindowPosition(HIMC a_imeContext, POINT a_position) const
 	{
-		constexpr std::size_t candidateWindowCount = 4;
-		for (std::size_t index = 0; index < candidateWindowCount; ++index) {
+		constexpr DWORD candidateWindowCount = 4;
+		for (DWORD index = 0; index < candidateWindowCount; ++index) {
 			CANDIDATEFORM candidate{};
-			candidate.dwIndex = static_cast<DWORD>(index);
+			candidate.dwIndex = index;
 			candidate.dwStyle = CFS_CANDIDATEPOS;
 			candidate.ptCurrentPos = a_position;
 			ImmSetCandidateWindow(a_imeContext, &candidate);

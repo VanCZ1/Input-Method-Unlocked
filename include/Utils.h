@@ -9,15 +9,6 @@ namespace Utils
 		[[nodiscard]] bool LessNoCase(std::string_view a_left, std::string_view a_right);
 	}
 
-	namespace DirectInput
-	{
-		[[nodiscard]] std::uint32_t GetKeyCodeFromKeyData(std::uint32_t a_keyData);
-		[[nodiscard]] bool IsKeyPressed(std::uint8_t a_keyCode);
-		[[nodiscard]] bool WasKeyPressed(std::uint8_t a_keyCode);
-		[[nodiscard]] bool IsTextInputModifierKey(std::uint32_t a_keyCode);
-		[[nodiscard]] bool IsTextInputCharacterKey(std::uint32_t a_keyCode);
-	}
-
 	namespace Charset
 	{
 		namespace Unicode
@@ -35,6 +26,15 @@ namespace Utils
 		}
 
 		[[nodiscard]] std::size_t GetCharByteCount(UINT a_codePage, std::uint8_t a_firstByte);
+	}
+
+	namespace DirectInput
+	{
+		[[nodiscard]] std::uint32_t GetKeyCodeFromKeyData(std::uint32_t a_keyData);
+		[[nodiscard]] bool IsKeyPressed(std::uint8_t a_keyCode);
+		[[nodiscard]] bool WasKeyPressed(std::uint8_t a_keyCode);
+		[[nodiscard]] bool IsTextInputModifierKey(std::uint32_t a_keyCode);
+		[[nodiscard]] bool IsTextInputCharacterKey(std::uint32_t a_keyCode);
 	}
 
 	namespace ActionScript
