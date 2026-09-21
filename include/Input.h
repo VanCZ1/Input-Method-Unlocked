@@ -5,7 +5,7 @@ namespace Input
 	class Manager : public REX::Singleton<Manager>
 	{
 	public:
-		RE::InputEvent* ProcessInputEvent(RE::InputEvent* a_eventHead);
+		bool ShouldBlockButtonEvent(RE::INPUT_DEVICE a_device, std::uint32_t a_keyCode, float a_value, float a_heldDuration);
 		void OnCompositionStart();
 		void OnCompositionEnd();
 		void ResetKeyState();

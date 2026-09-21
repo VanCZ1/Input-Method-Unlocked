@@ -20,115 +20,81 @@ namespace Input
 		}
 	}
 
-	RE::InputEvent* Manager::ProcessInputEvent(RE::InputEvent* a_eventHead)
+	bool Manager::ShouldBlockButtonEvent(RE::INPUT_DEVICE a_device, std::uint32_t a_keyCode, float a_value, float a_heldDuration)
 	{
-		if (!a_eventHead) {
-			return a_eventHead;
+		if (a_device != RE::INPUT_DEVICE::kKeyboard || a_keyCode >= directInputKeyCount) {
+			return false;
 		}
 
 		std::scoped_lock lock(keyStateMutex);
 
 		auto inputMethodManager = InputMethod::Manager::GetSingleton();
 		if (!inputMethodManager->IsEnabled()) {
-			return a_eventHead;
+			return false;
 		}
 
+		bool shouldBlockEvent = false;
+		const auto keyIndex = static_cast<std::size_t>(a_keyCode);
+		const bool isPressed = a_value > 0.0f;
+		const bool isDown = isPressed && a_heldDuration == 0.0f;
 		const bool isComposing = inputMethodManager->IsComposing();
 		const auto consoleKeyCode = inputMethodManager->GetConsoleKeyCode();
-		bool isLeftCtrlPressed = Utils::DirectInput::WasKeyPressed(DIK_LCONTROL);
-		bool isRightCtrlPressed = Utils::DirectInput::WasKeyPressed(DIK_RCONTROL);
 
-		auto currentEventPtr = &a_eventHead;
-		while (*currentEventPtr) {
-			bool shouldBlockCurrentEvent = false;
-			const auto currentEvent = *currentEventPtr;
-			const auto eventType = currentEvent->GetEventType();
+		if (isComposing) {
+			shouldBlockEvent = true;
 
-			switch (eventType) {
-			case RE::INPUT_EVENT_TYPE::kButton:
-				{
-					const auto buttonEvent = currentEvent->AsButtonEvent();
-					if (!buttonEvent || buttonEvent->GetDevice() != RE::INPUT_DEVICE::kKeyboard) {
-						break;
-					}
-
-					const auto keyCode = buttonEvent->GetIDCode();
-					const auto keyIndex = static_cast<std::size_t>(keyCode);
-
-					if (isComposing) {
-						shouldBlockCurrentEvent = true;
-
-						if (IsPassableModifierKey(keyCode)) {
-							shouldBlockCurrentEvent = !modifierKeyPassed.test(keyIndex);
-							if (!buttonEvent->IsPressed()) {
-								modifierKeyPassed.reset(keyIndex);
-							}
-						}
-
-						if (buttonEvent->IsDown()) {
-							shouldCaptureLastKeyInComposing = true;
-							lastKeyInComposing = keyCode;
-						} else if (!buttonEvent->IsPressed() && keyCode == lastKeyInComposing) {
-							lastKeyInComposing.reset();
-						}
-					} else {
-						if (shouldCaptureEndKeyInComposing && buttonEvent->IsDown()) {
-							shouldCaptureEndKeyInComposing = false;
-							endKeyInComposing = keyCode;
-						}
-
-						if (keyCode == endKeyInComposing) {
-							shouldBlockCurrentEvent = true;
-							endKeyInComposing.reset();
-						} else if (keyCode == consoleKeyCode) {
-							shouldBlockCurrentEvent = false;
-						} else if (Utils::DirectInput::IsTextInputModifierKey(keyCode)) {
-							shouldBlockCurrentEvent = true;
-
-							if (IsPassableModifierKey(keyCode)) {
-								shouldBlockCurrentEvent = false;
-
-								if (keyCode == DIK_LCONTROL) {
-									isLeftCtrlPressed = buttonEvent->IsPressed();
-								} else if (keyCode == DIK_RCONTROL) {
-									isRightCtrlPressed = buttonEvent->IsPressed();
-								}
-
-								modifierKeyPassed.set(keyIndex, buttonEvent->IsPressed());
-							}
-						} else if (Utils::DirectInput::IsTextInputCharacterKey(keyCode)) {
-							shouldBlockCurrentEvent = true;
-
-							if (buttonEvent->IsDown()) {
-								characterKeyWithCtrl.set(keyIndex, isLeftCtrlPressed || isRightCtrlPressed);
-							}
-							if (characterKeyWithCtrl.test(keyIndex)) {
-								shouldBlockCurrentEvent = false;
-							}
-							if (!buttonEvent->IsPressed()) {
-								characterKeyWithCtrl.reset(keyIndex);
-							}
-						}
-					}
-					break;
+			if (IsPassableModifierKey(a_keyCode)) {
+				shouldBlockEvent = !modifierKeyPassed.test(keyIndex);
+				if (!isPressed) {
+					modifierKeyPassed.reset(keyIndex);
 				}
-			case RE::INPUT_EVENT_TYPE::kChar:
-				{
-					shouldBlockCurrentEvent = true;
-					break;
-				}
-			default:
-				break;
 			}
 
-			if (shouldBlockCurrentEvent) {
-				*currentEventPtr = (*currentEventPtr)->next;
-			} else {
-				currentEventPtr = &(*currentEventPtr)->next;
+			if (isDown) {
+				shouldCaptureLastKeyInComposing = true;
+				lastKeyInComposing = a_keyCode;
+			} else if (!isPressed && a_keyCode == lastKeyInComposing) {
+				lastKeyInComposing.reset();
+			}
+		} else {
+			if (shouldCaptureEndKeyInComposing && isDown) {
+				shouldCaptureEndKeyInComposing = false;
+				endKeyInComposing = a_keyCode;
+			}
+
+			if (a_keyCode == endKeyInComposing) {
+				shouldBlockEvent = true;
+
+				if (!isPressed) {
+					endKeyInComposing.reset();
+				}
+			} else if (a_keyCode == consoleKeyCode) {
+				shouldBlockEvent = false;
+			} else if (Utils::DirectInput::IsTextInputModifierKey(a_keyCode)) {
+				shouldBlockEvent = true;
+
+				if (IsPassableModifierKey(a_keyCode)) {
+					shouldBlockEvent = false;
+					modifierKeyPassed.set(keyIndex, isPressed);
+				}
+			} else if (Utils::DirectInput::IsTextInputCharacterKey(a_keyCode)) {
+				shouldBlockEvent = true;
+
+				if (isDown) {
+					const bool isLeftCtrlPressed = Utils::DirectInput::IsKeyPressed(DIK_LCONTROL);
+					const bool isRightCtrlPressed = Utils::DirectInput::IsKeyPressed(DIK_RCONTROL);
+					characterKeyWithCtrl.set(keyIndex, isLeftCtrlPressed || isRightCtrlPressed);
+				}
+				if (characterKeyWithCtrl.test(keyIndex)) {
+					shouldBlockEvent = false;
+				}
+				if (!isPressed) {
+					characterKeyWithCtrl.reset(keyIndex);
+				}
 			}
 		}
 
-		return a_eventHead;
+		return shouldBlockEvent;
 	}
 
 	void Manager::OnCompositionStart()

@@ -152,32 +152,52 @@ namespace Hooks
 		static inline REL::Relocation<decltype(Thunk)> originalFunction;
 	};
 
-	class ProcessInputQueueHook
+	class AddCharEventHook
 	{
 	public:
 		static void Install()
 		{
-			REL::Relocation<std::uintptr_t> target{ RELOCATION_ID(67315, 68617), REL::VariantOffset(0x7B, 0x7B, 0x81) };
+			REL::Relocation<std::uintptr_t> target{ RELOCATION_ID(67472, 68782), REL::VariantOffset(0x22D, 0x2EB, 0x1D4) };
 			auto& trampoline = SKSE::GetTrampoline();
 			originalFunction = trampoline.write_call<5>(target.address(), Thunk);
 		}
 
 	private:
-		static void Thunk(RE::BSTEventSource<RE::InputEvent*>* a_dispatcher, RE::InputEvent* const* a_events)
+		static void Thunk(RE::BSInputEventQueue* a_queue, std::uint32_t a_codePoint)
 		{
-			if (!a_events || !*a_events) {
-				return originalFunction(a_dispatcher, a_events);
-			}
-
 			auto inputMethodManager = InputMethod::Manager::GetSingleton();
-			if (!inputMethodManager->IsEnabled()) {
-				return originalFunction(a_dispatcher, a_events);
+			if (inputMethodManager->IsEnabled()) {
+				return;
 			}
 
-			const auto eventHead = Input::Manager::GetSingleton()->ProcessInputEvent(*a_events);
-			RE::InputEvent* const filteredEvents[] = { eventHead };
-			originalFunction(a_dispatcher, filteredEvents);
-			inputMethodManager->UpdateImeWindowPosition();
+			originalFunction(a_queue, a_codePoint);
+		}
+
+		static inline REL::Relocation<decltype(Thunk)> originalFunction;
+	};
+
+	class AddButtonEventHook
+	{
+	public:
+		static void Install()
+		{
+			REL::Relocation<std::uintptr_t> target{ RELOCATION_ID(67441, 68748), REL::VariantOffset(0xF0, 0xEC, 0xF0) };
+			auto& trampoline = SKSE::GetTrampoline();
+			originalFunction = trampoline.write_call<5>(target.address(), Thunk);
+		}
+
+	private:
+		static void Thunk(RE::BSInputEventQueue* a_queue, RE::INPUT_DEVICE a_device, std::uint32_t a_keyCode, float a_value, float a_heldDuration)
+		{
+			auto inputMethodManager = InputMethod::Manager::GetSingleton();
+			if (inputMethodManager->IsEnabled()) {
+				inputMethodManager->UpdateImeWindowPosition();
+				if (Input::Manager::GetSingleton()->ShouldBlockButtonEvent(a_device, a_keyCode, a_value, a_heldDuration)) {
+					return;
+				}
+			}
+
+			originalFunction(a_queue, a_device, a_keyCode, a_value, a_heldDuration);
 		}
 
 		static inline REL::Relocation<decltype(Thunk)> originalFunction;
@@ -211,11 +231,11 @@ namespace Hooks
 				}
 			}
 
-			if (!inputMethodManager->IsEnabled()) {
-				return CallWindowProcA(originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+			if (inputMethodManager->IsEnabled()) {
+				return Window::ProcessWindowMessage(originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 
-			return Window::ProcessWindowMessage(originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
+			return CallWindowProcA(originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 		}
 
 		static inline WNDPROC originalFunction;
@@ -224,7 +244,7 @@ namespace Hooks
 	void InstallAtLoad()
 	{
 		logger::info("Installing hooks at Load...");
-		SKSE::AllocTrampoline(22);
+		SKSE::AllocTrampoline(36);
 		DirectInput8CreateHook::Install();
 		logger::info("Hooks installation is complete at Load.");
 	}
@@ -233,6 +253,8 @@ namespace Hooks
 	{
 		logger::info("Installing hooks at PostLoad...");
 		ToUnicodeHook::Install();
+		AddCharEventHook::Install();
+		AddButtonEventHook::Install();
 		logger::info("Hooks installation is complete at PostLoad.");
 	}
 
@@ -252,7 +274,6 @@ namespace Hooks
 		}
 
 		InputMethod::Manager::GetSingleton()->Initialize(hWnd);
-		ProcessInputQueueHook::Install();
 		WndProcHook::Install(hWnd);
 		logger::info("Hooks installation is complete at InputLoaded.");
 	}
