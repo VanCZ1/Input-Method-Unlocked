@@ -185,7 +185,7 @@ namespace InputMethod
 		ImmNotifyIME(imeContext, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
 		constexpr std::size_t candidateWindowCount = 4;
 		for (std::size_t index = 0; index < candidateWindowCount; ++index) {
-			ImmNotifyIME(imeContext, NI_CLOSECANDIDATE, index, 0);
+			ImmNotifyIME(imeContext, NI_CLOSECANDIDATE, static_cast<DWORD>(index), 0);
 		}
 	}
 
