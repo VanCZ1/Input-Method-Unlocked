@@ -111,6 +111,28 @@ namespace InputMethod
 		});
 	}
 
+	void Manager::UpdateCharCodePage(HKL a_keyboardLayout)
+	{
+		charCodePage = CP_ACP;
+
+		if (a_keyboardLayout) {
+			const auto languageID = LOWORD(reinterpret_cast<std::uintptr_t>(a_keyboardLayout));
+			const auto localeID = MAKELCID(languageID, SORT_DEFAULT);
+			wchar_t localeName[LOCALE_NAME_MAX_LENGTH] = { 0 };
+			if (LCIDToLocaleName(localeID, localeName, LOCALE_NAME_MAX_LENGTH, 0)) {
+				DWORD codePage = 0;
+				if (GetLocaleInfoEx(localeName, LOCALE_IDEFAULTANSICODEPAGE | LOCALE_RETURN_NUMBER,
+						reinterpret_cast<wchar_t*>(&codePage), static_cast<int>(sizeof(codePage) / sizeof(wchar_t)))) {
+					charCodePage = codePage;
+				}
+			}
+		}
+
+		if (charCodePage == 0) {
+			charCodePage = GetACP();
+		}
+	}
+
 	void Manager::RecordComposing(bool a_isComposing)
 	{
 		isComposing.store(a_isComposing, std::memory_order_relaxed);
@@ -191,28 +213,6 @@ namespace InputMethod
 		totalCharByteCount = 0;
 		pendingCharByteCount = 0;
 		pendingCharBytes.fill(0);
-	}
-
-	void Manager::UpdateCharCodePage(HKL a_keyboardLayout)
-	{
-		charCodePage = CP_ACP;
-
-		if (a_keyboardLayout) {
-			const auto languageID = LOWORD(reinterpret_cast<std::uintptr_t>(a_keyboardLayout));
-			const auto localeID = MAKELCID(languageID, SORT_DEFAULT);
-			wchar_t localeName[LOCALE_NAME_MAX_LENGTH] = { 0 };
-			if (LCIDToLocaleName(localeID, localeName, LOCALE_NAME_MAX_LENGTH, 0)) {
-				DWORD codePage = 0;
-				if (GetLocaleInfoEx(localeName, LOCALE_IDEFAULTANSICODEPAGE | LOCALE_RETURN_NUMBER,
-						reinterpret_cast<wchar_t*>(&codePage), static_cast<int>(sizeof(codePage) / sizeof(wchar_t)))) {
-					charCodePage = codePage;
-				}
-			}
-		}
-
-		if (charCodePage == 0) {
-			charCodePage = GetACP();
-		}
 	}
 
 	void Manager::ProcessCharResult(std::uint8_t a_charByte, std::uint16_t a_repeatCount)

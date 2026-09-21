@@ -13,6 +13,7 @@ namespace InputMethod
 		bool IsEnabled() const;
 		void ResetState();
 		void UpdateImeWindowPosition();
+		void UpdateCharCodePage(HKL a_keyboardLayout);
 
 		void RecordComposing(bool a_isComposing);
 		bool IsComposing() const;
@@ -23,7 +24,6 @@ namespace InputMethod
 		bool IsCandidateWindowOpen() const;
 
 		void ClearPendingCharResult();
-		void UpdateCharCodePage(HKL a_keyboardLayout);
 		void ProcessCharResult(std::uint8_t a_charByte, std::uint16_t a_repeatCount);
 		std::wstring GetImeResultString() const;
 		void ProcessImeResult();

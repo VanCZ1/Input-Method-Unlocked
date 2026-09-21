@@ -208,9 +208,7 @@ namespace Utils::Encoding
 
 	std::size_t GetCharByteCount(UINT a_codePage, std::uint8_t a_firstByte)
 	{
-		if (a_codePage != CP_UTF8) {
-			return IsDBCSLeadByteEx(a_codePage, a_firstByte) ? 2 : 1;
-		} else {
+		if (a_codePage == CP_UTF8) {
 			if (a_firstByte <= 0x7F) {
 				return 1;
 			} else if (a_firstByte >= 0xC2 && a_firstByte <= 0xDF) {
@@ -220,6 +218,8 @@ namespace Utils::Encoding
 			} else if (a_firstByte >= 0xF0 && a_firstByte <= 0xF4) {
 				return 4;
 			}
+		} else {
+			return IsDBCSLeadByteEx(a_codePage, a_firstByte) ? 2 : 1;
 		}
 
 		return 0;
