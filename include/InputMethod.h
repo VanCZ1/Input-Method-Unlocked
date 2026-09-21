@@ -43,9 +43,5 @@ namespace InputMethod
 		std::size_t totalCharByteCount{ 0 };
 		std::size_t pendingCharByteCount{ 0 };
 		std::array<char, 4> pendingCharBytes{};
-
-		static inline constexpr std::size_t charEventPoolSize{ 256 };
-		std::array<RE::GFxCharEvent, charEventPoolSize> charEventPool{};
-		std::size_t charEventIndex{ 0 };
 	};
 }

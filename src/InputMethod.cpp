@@ -415,33 +415,12 @@ namespace InputMethod
 
 	void Manager::SendCodePoint(std::uint32_t a_codePoint)
 	{
-		const auto uiQueue = RE::UIMessageQueue::GetSingleton();
-		const auto interfaceStrings = RE::InterfaceStrings::GetSingleton();
-		const auto factoryManager = RE::MessageDataFactoryManager::GetSingleton();
-		if (!uiQueue || !interfaceStrings || !factoryManager) {
-			logger::error("Failed to send code point.");
+		const auto inputEventQueue = RE::BSInputEventQueue::GetSingleton();
+		if (!inputEventQueue) {
+			logger::error("Failed to get BSInputEventQueue.");
 			return;
 		}
 
-		const auto scaleformDataCreator = factoryManager->GetCreator<RE::BSUIScaleformData>(interfaceStrings->bsUIScaleformData);
-		if (!scaleformDataCreator) {
-			logger::error("Failed to get BSUIScaleformData Creator.");
-			return;
-		}
-
-		const auto scaleformData = scaleformDataCreator->Create();
-		if (!scaleformData) {
-			logger::error("Failed to create BSUIScaleformData.");
-			return;
-		}
-
-		RE::GFxCharEvent& charEvent = charEventPool[charEventIndex];
-		charEventIndex = (charEventIndex + 1) % charEventPoolSize;
-		charEvent.type = RE::GFxEvent::EventType::kCharEvent;
-		charEvent.wCharCode = a_codePoint;
-		charEvent.keyboardIndex = 0;
-		scaleformData->scaleformEvent = &charEvent;
-
-		uiQueue->AddMessage(interfaceStrings->topMenu, RE::UI_MESSAGE_TYPE::kScaleformEvent, scaleformData);
+		inputEventQueue->AddCharEvent(a_codePoint);
 	}
 }
