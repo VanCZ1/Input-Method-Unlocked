@@ -39,7 +39,16 @@ namespace Window
 					return CallWindowProcA(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 				}
 
-				inputMethodManager->ProcessCharResult(static_cast<std::uint8_t>(a_wParam), LOWORD(a_lParam));
+				if (a_wParam <= std::numeric_limits<std::uint8_t>::max()) {
+					inputMethodManager->ProcessCharResult(static_cast<std::uint8_t>(a_wParam), LOWORD(a_lParam));
+				} else {
+					auto charBytes = a_wParam;
+					do {
+						inputMethodManager->ProcessCharResult(static_cast<std::uint8_t>(charBytes), LOWORD(a_lParam));
+						charBytes >>= 8;
+					} while (charBytes != 0);
+				}
+				
 				return CallWindowProcA(a_originalFunction, a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		case WM_KILLFOCUS:
