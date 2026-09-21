@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 4.2)
 set(NAME "InputMethodUnlocked")
-set(VERSION 1.3.0)
+set(VERSION 2.0.0)
 set(LICENSE "GPL-3.0 License")
 
 # --------------------------------------------------------------------------- #
