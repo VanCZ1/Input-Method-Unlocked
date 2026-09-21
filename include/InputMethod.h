@@ -20,9 +20,6 @@ namespace InputMethod
 		void CancelComposition() const;
 		void SetCompositionWindowFont(HKL a_keyboardLayout, std::optional<BYTE> a_characterSet) const;
 		
-		void RecordCandidateWindowOpen(bool a_isOpen);
-		bool IsCandidateWindowOpen() const;
-
 		void ClearPendingCharResult();
 		void ProcessCharResult(std::uint8_t a_charByte, std::uint16_t a_repeatCount);
 		std::wstring GetImeResultString() const;
@@ -43,7 +40,6 @@ namespace InputMethod
 		UINT charCodePage{ CP_ACP };
 
 		std::atomic<bool> isComposing{ false };
-		bool isCandidateWindowOpen{ false };
 		std::size_t totalCharByteCount{ 0 };
 		std::size_t pendingCharByteCount{ 0 };
 		std::array<char, 4> pendingCharBytes{};

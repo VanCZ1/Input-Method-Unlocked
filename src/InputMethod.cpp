@@ -87,7 +87,6 @@ namespace InputMethod
 	void Manager::ResetState()
 	{
 		isComposing.store(false, std::memory_order_relaxed);
-		isCandidateWindowOpen = false;
 		ClearPendingCharResult();
 	}
 
@@ -196,16 +195,6 @@ namespace InputMethod
 		}
 
 		ImmReleaseContext(gameWindow, imeContext);
-	}
-
-	void Manager::RecordCandidateWindowOpen(bool a_isOpen)
-	{
-		isCandidateWindowOpen = a_isOpen;
-	}
-
-	bool Manager::IsCandidateWindowOpen() const
-	{
-		return isCandidateWindowOpen;
 	}
 
 	void Manager::ClearPendingCharResult()

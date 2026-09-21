@@ -101,12 +101,6 @@ namespace Window
 			}
 		case WM_IME_NOTIFY:
 			{
-				if (a_wParam == IMN_OPENCANDIDATE) {
-					inputMethodManager->RecordCandidateWindowOpen(true);
-				} else if (a_wParam == IMN_CLOSECANDIDATE) {
-					inputMethodManager->RecordCandidateWindowOpen(false);
-				}
-
 				return DefWindowProcA(a_hWnd, a_uMsg, a_wParam, a_lParam);
 			}
 		default:
