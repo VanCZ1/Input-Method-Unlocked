@@ -6,6 +6,34 @@ namespace InputMethod
 {
 	namespace
 	{
+		class ScopedImeContext
+		{
+		public:
+			explicit ScopedImeContext(HWND a_window) noexcept :
+				window(a_window),
+				context(a_window ? ImmGetContext(a_window) : nullptr)
+			{}
+
+			ScopedImeContext(const ScopedImeContext&) = delete;
+			ScopedImeContext& operator=(const ScopedImeContext&) = delete;
+
+			~ScopedImeContext() noexcept
+			{
+				if (context) {
+					ImmReleaseContext(window, context);
+				}
+			}
+
+			[[nodiscard]] HIMC Get() const noexcept
+			{
+				return context;
+			}
+
+		private:
+			HWND window;
+			HIMC context;
+		};
+
 		std::optional<POINT> GetDefaultImeWindowPosition(HWND a_hWnd)
 		{
 			if (!a_hWnd) {
@@ -148,13 +176,17 @@ namespace InputMethod
 			return;
 		}
 
-		const auto imeContext = ImmGetContext(gameWindow);
+		const ScopedImeContext scopedImeContext{ gameWindow };
+		const auto imeContext = scopedImeContext.Get();
 		if (!imeContext) {
 			return;
 		}
 
 		ImmNotifyIME(imeContext, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
-		ImmReleaseContext(gameWindow, imeContext);
+		constexpr std::size_t candidateWindowCount = 4;
+		for (std::size_t index = 0; index < candidateWindowCount; ++index) {
+			ImmNotifyIME(imeContext, NI_CLOSECANDIDATE, index, 0);
+		}
 	}
 
 	void Manager::SetCompositionWindowFont(HKL a_keyboardLayout, std::optional<BYTE> a_characterSet) const
@@ -167,7 +199,8 @@ namespace InputMethod
 			return;
 		}
 
-		const auto imeContext = ImmGetContext(gameWindow);
+		const ScopedImeContext scopedImeContext{ gameWindow };
+		const auto imeContext = scopedImeContext.Get();
 		if (!imeContext) {
 			return;
 		}
@@ -193,8 +226,6 @@ namespace InputMethod
 				ImmSetCompositionFontW(imeContext, &compositionFont);
 			}
 		}
-
-		ImmReleaseContext(gameWindow, imeContext);
 	}
 
 	void Manager::ClearPendingCharResult()
@@ -264,16 +295,17 @@ namespace InputMethod
 
 	std::wstring Manager::GetImeResultString() const
 	{
-		std::wstring result;
 		if (!gameWindow) {
-			return result;
+			return {};
 		}
 
-		const auto imeContext = ImmGetContext(gameWindow);
+		const ScopedImeContext scopedImeContext{ gameWindow };
+		const auto imeContext = scopedImeContext.Get();
 		if (!imeContext) {
-			return result;
+			return {};
 		}
 
+		std::wstring result;
 		constexpr auto codeUnitSize = static_cast<LONG>(sizeof(wchar_t));
 		const auto bufferLength = ImmGetCompositionStringW(imeContext, GCS_RESULTSTR, nullptr, 0);
 		if (bufferLength > 0) {
@@ -286,7 +318,6 @@ namespace InputMethod
 			}
 		}
 
-		ImmReleaseContext(gameWindow, imeContext);
 		return result;
 	}
 
@@ -334,7 +365,8 @@ namespace InputMethod
 			return;
 		}
 
-		const auto imeContext = ImmGetContext(gameWindow);
+		const ScopedImeContext scopedImeContext{ gameWindow };
+		const auto imeContext = scopedImeContext.Get();
 		if (!imeContext) {
 			return;
 		}
@@ -343,8 +375,6 @@ namespace InputMethod
 			SetCompositionWindowPosition(imeContext, *position);
 			SetCandidateWindowPosition(imeContext, *position);
 		}
-
-		ImmReleaseContext(gameWindow, imeContext);
 	}
 
 	bool Manager::NeedSetImeWindowPosition(HIMC a_imeContext, POINT a_position) const
