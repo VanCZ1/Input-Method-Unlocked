@@ -55,7 +55,7 @@
       }
     },
     {
-      "name": "debug-msvc",
+      "name": "debug",
       "inherits": [
         "base",
         "vcpkg",
@@ -70,7 +70,7 @@
       }
     },
     {
-      "name": "release-msvc",
+      "name": "release",
       "inherits": [
         "base",
         "vcpkg",
@@ -88,12 +88,12 @@
   "buildPresets": [
     {
       "name": "debug",
-      "configurePreset": "debug-msvc",
+      "configurePreset": "debug",
       "configuration": "Debug"
     },
     {
       "name": "release",
-      "configurePreset": "release-msvc",
+      "configurePreset": "release",
       "configuration": "Release"
     }
   ],
