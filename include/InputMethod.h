@@ -47,7 +47,7 @@ namespace InputMethod
 		std::array<char, 4> pendingCharBytes{};
 
 		std::mutex codePointMutex;
-		static inline constexpr std::size_t maxCodePointCount{ 20 };
+		static inline constexpr std::size_t maxCodePointCount{ 25 };
 		std::deque<std::uint32_t> codePointQueue;
 	};
 }
