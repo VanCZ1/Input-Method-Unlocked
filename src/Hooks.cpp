@@ -297,8 +297,8 @@ namespace Hooks
 			return;
 		}
 
-		InputMethod::Manager::GetSingleton()->Initialize(hWnd);
 		WndProcHook::Install(hWnd);
+		InputMethod::Manager::GetSingleton()->Initialize(hWnd);
 		logger::info("Hooks installation is complete at InputLoaded.");
 	}
 }
