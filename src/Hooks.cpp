@@ -203,6 +203,29 @@ namespace Hooks
 		static inline REL::Relocation<decltype(Thunk)> originalFunction;
 	};
 
+	class KeyboardPollHook
+	{
+	public:
+		static void Install()
+		{
+			REL::Relocation<std::uintptr_t> vTable{ RE::BSWin32KeyboardDevice::VTABLE[0] };
+			originalFunction = vTable.write_vfunc(0x02, Thunk);
+		}
+
+	private:
+		static void Thunk(RE::BSWin32KeyboardDevice* a_this, float a_deltaTime)
+		{
+			auto inputMethodManager = InputMethod::Manager::GetSingleton();
+			if (inputMethodManager->IsEnabled()) {
+				inputMethodManager->ProcessCodePointQueue();
+			}
+			
+			originalFunction(a_this, a_deltaTime);
+		}
+
+		static inline REL::Relocation<decltype(Thunk)> originalFunction;
+	};
+
 	class WndProcHook
 	{
 	public:
@@ -255,6 +278,7 @@ namespace Hooks
 		ToUnicodeHook::Install();
 		AddCharEventHook::Install();
 		AddButtonEventHook::Install();
+		KeyboardPollHook::Install();
 		logger::info("Hooks installation is complete at PostLoad.");
 	}
 

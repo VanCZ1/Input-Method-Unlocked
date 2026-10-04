@@ -116,6 +116,7 @@ namespace InputMethod
 	{
 		isComposing.store(false, std::memory_order_relaxed);
 		ClearPendingCharResult();
+		ClearCodePointQueue();
 	}
 
 	void Manager::UpdateImeWindowPosition()
@@ -286,7 +287,7 @@ namespace InputMethod
 			const auto repeatCount = std::max<std::uint16_t>(a_repeatCount, 1);
 			if (Utils::Charset::Unicode::IsTextCodePoint(codePoint)) {
 				for (std::size_t index = 0; index < repeatCount; ++index) {
-					SendCodePoint(codePoint);
+					AddToCodePointQueue(codePoint);
 				}
 			}
 			return;
@@ -350,7 +351,26 @@ namespace InputMethod
 				codePoint = replacementCharacter;
 			}
 
-			SendCodePoint(codePoint);
+			AddToCodePointQueue(codePoint);
+		}
+	}
+
+	void Manager::ProcessCodePointQueue()
+	{
+		std::scoped_lock lock(codePointMutex);
+
+		if (!IsEnabled()) {
+			return;
+		}
+
+		const auto inputEventQueue = RE::BSInputEventQueue::GetSingleton();
+		if (!inputEventQueue) {
+			return;
+		}
+
+		while (!codePointQueue.empty() && inputEventQueue->charEventCount < RE::BSInputEventQueue::MAX_CHAR_EVENTS) {
+			inputEventQueue->AddCharEvent(codePointQueue.front());
+			codePointQueue.pop_front();
 		}
 	}
 
@@ -413,14 +433,22 @@ namespace InputMethod
 		}
 	}
 
-	void Manager::SendCodePoint(std::uint32_t a_codePoint)
+	void Manager::AddToCodePointQueue(std::uint32_t a_codePoint)
 	{
-		const auto inputEventQueue = RE::BSInputEventQueue::GetSingleton();
-		if (!inputEventQueue) {
-			logger::error("Failed to get BSInputEventQueue.");
+		std::scoped_lock lock(codePointMutex);
+
+		if (!IsEnabled()) {
 			return;
 		}
 
-		inputEventQueue->AddCharEvent(a_codePoint);
+		if (codePointQueue.size() < maxCodePointCount) {
+			codePointQueue.push_back(a_codePoint);
+		}
+	}
+
+	void Manager::ClearCodePointQueue()
+	{
+		std::scoped_lock lock(codePointMutex);
+		codePointQueue.clear();
 	}
 }
