@@ -47,6 +47,7 @@ namespace InputMethod
 		std::array<char, 4> pendingCharBytes{};
 
 		std::mutex codePointMutex;
+		// Setting a limit is better, because typing too many characters at once causes delay
 		static inline constexpr std::size_t maxCodePointCount{ 25 };
 		std::deque<std::uint32_t> codePointQueue;
 	};
